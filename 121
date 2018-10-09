@@ -19,7 +19,6 @@ export default {
       // 基于准备好的dom，初始化echarts实例
       let myChart2 = echarts.init(document.getElementById('myChart2'));
       // 绘制图表
-      var times = [[1538956800, 2], [1522306919000, 1], [1522307019000, 3], [1522307119000, 1]];
       myChart2.setOption({
         tooltip: {
           trigger: 'axis',
@@ -38,9 +37,24 @@ export default {
           containLabel: true
         },
         xAxis: {
-          type: 'time',
+          type: 'value',
+          max: 1440,
+          splitNumber: 22,
+          axisLabel: {
+            formatter: function (value, index) {
+            // 格式化成月/日，只在第一个刻度显示年份
+              // var date = new Date(value);
+              // var texts = [(date.getMonth() + 1), date.getDate()];
+              var texts = value;
+              if (index === 0) {
+                texts = '08:00';
+              }
+              return texts;
+            }
+          },
+          data: [0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200, 1260, 1320, 1380, 1440]
           // splitNumber: 20,
-          data: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00', '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00']
+          // data: [0, 60, 120, '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00', '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00']
         },
         yAxis: {
           type: 'category',
@@ -58,56 +72,68 @@ export default {
                 position: 'insideRight'
               }
             },
-            data: times
+            data: [120, 132, 0, 101]
+          },
+          {
+            name: '邮件营销',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: [120, 132, 101, 134]
+          },
+          {
+            name: '联盟广告',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: [220, 182, 191, 234]
+          },
+          {
+            name: '视频广告',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: [150, 212, 201, 155]
+          },
+          {
+            name: '搜索引擎',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: [500, 500, 500, 500]
+          },
+          {
+            name: '直接访问',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: [220, 302, 222, 201]
           }
-          // {
-          //   name: '邮件营销',
-          //   type: 'bar',
-          //   stack: '总量',
-          //   label: {
-          //     normal: {
-          //       show: true,
-          //       position: 'insideRight'
-          //     }
-          //   },
-          //   data: [120, 132, 101, 134]
-          // },
-          // {
-          //   name: '联盟广告',
-          //   type: 'bar',
-          //   stack: '总量',
-          //   label: {
-          //     normal: {
-          //       show: true,
-          //       position: 'insideRight'
-          //     }
-          //   },
-          //   data: [220, 182, 191, 234]
-          // },
-          // {
-          //   name: '视频广告',
-          //   type: 'bar',
-          //   stack: '总量',
-          //   label: {
-          //     normal: {
-          //       show: true,
-          //       position: 'insideRight'
-          //     }
-          //   },
-          //   data: [150, 212, 201, 155]
-          // },
-          // {
-          //   name: '搜索引擎',
-          //   type: 'bar',
-          //   stack: '总量',
-          //   label: {
-          //     normal: {
-          //       show: true,
-          //       position: 'insideRight'
-          //     }
-          //   },
-          //   data: [820, 832, 901, 934]
-          // }
         ]
       });
     }
