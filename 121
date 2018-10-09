@@ -1,0 +1,116 @@
+<template>
+  <div id="myChart2" :style="{width: '1145px', height: '425px',display:'inline-block'}"></div>
+</template>
+
+<script>
+import echarts from 'echarts';
+export default {
+  name: 'hello',
+  data() {
+    return {
+      msg: 'Welcome to Your Vue.js App'
+    };
+  },
+  mounted() {
+    this.drawLine2();
+  },
+  methods: {
+    drawLine2() {
+      // 基于准备好的dom，初始化echarts实例
+      let myChart2 = echarts.init(document.getElementById('myChart2'));
+      // 绘制图表
+      var times = [[1538956800, 2], [1522306919000, 1], [1522307019000, 3], [1522307119000, 1]];
+      myChart2.setOption({
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            // 坐标轴指示器，坐标轴触发有效
+            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+          }
+        },
+        legend: {
+          data: ['直接访问', '邮件营销', '联盟广告', '视频广告', '搜索引擎']
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'time',
+          // splitNumber: 20,
+          data: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00', '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00']
+        },
+        yAxis: {
+          type: 'category',
+          // data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+          data: ['JI_4D02', 'JI_4D03', 'JI_4D04', 'JI_4D05']
+        },
+        series: [
+          {
+            name: '直接访问',
+            type: 'bar',
+            stack: '总量',
+            label: {
+              normal: {
+                show: true,
+                position: 'insideRight'
+              }
+            },
+            data: times
+          }
+          // {
+          //   name: '邮件营销',
+          //   type: 'bar',
+          //   stack: '总量',
+          //   label: {
+          //     normal: {
+          //       show: true,
+          //       position: 'insideRight'
+          //     }
+          //   },
+          //   data: [120, 132, 101, 134]
+          // },
+          // {
+          //   name: '联盟广告',
+          //   type: 'bar',
+          //   stack: '总量',
+          //   label: {
+          //     normal: {
+          //       show: true,
+          //       position: 'insideRight'
+          //     }
+          //   },
+          //   data: [220, 182, 191, 234]
+          // },
+          // {
+          //   name: '视频广告',
+          //   type: 'bar',
+          //   stack: '总量',
+          //   label: {
+          //     normal: {
+          //       show: true,
+          //       position: 'insideRight'
+          //     }
+          //   },
+          //   data: [150, 212, 201, 155]
+          // },
+          // {
+          //   name: '搜索引擎',
+          //   type: 'bar',
+          //   stack: '总量',
+          //   label: {
+          //     normal: {
+          //       show: true,
+          //       position: 'insideRight'
+          //     }
+          //   },
+          //   data: [820, 832, 901, 934]
+          // }
+        ]
+      });
+    }
+  }
+};
+</script>
