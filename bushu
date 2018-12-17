@@ -1,0 +1,273 @@
+# 部署手册
+
+## 环境要求
+
+### 硬件清单
+Ubuntu 4C/8G 3台
+
+### 软件清单
+* jdk8
+* gradle 4.4 +
+* docker 1.11 +
+* docker-compose 1.18 +
+* docker基础镜像
+    * openjdk:8-jre-alpine
+    * node:8.12-stretch
+    * mysql:5.7.20
+    * mongo:3.2.21
+    * rabbitmq:3.7-management
+
+## 打包与构建docker镜像
+    
+### rabbitmq开启stomp扩展
+
+构建镜像, Dockerfile如下
+```
+FROM rabbitmq:3.7-management
+RUN rabbitmq-plugins enable --offline rabbitmq_stomp
+```
+执行如下命令
+```
+docker build -t rabbitmq:3.7-stomp .
+```
+
+### sbbp
+
+1. 进入sbbp根目录, 使用gradle打包
+    ```
+    gradle build -Pprod -x test
+    ```
+    此时会生成 build/libs/sbbp-0.0.1-SNAPSHOT.war
+    
+2. 构建docker镜像, Dockerfile如下
+    ```
+    FROM openjdk:8-jre-alpine
+    
+    ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
+        APP_SLEEP=0 \
+        JAVA_OPTS=""
+    
+    # Add a user to run our application so that it doesn't need to run as root
+    RUN adduser -D -s /bin/sh sbbp
+    WORKDIR /home/sbbp
+    
+    USER sbbp
+    
+    ADD ./build/libs/*.war app.war
+    
+    CMD echo "The application will start in ${APP_SLEEP}s..." && \
+        sleep ${APP_SLEEP} && \
+        java ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar "${HOME}/app.war" "$@"
+    
+    EXPOSE 8080 5701/udp
+    ```
+    执行如下命令
+    ```
+    docker build -t sbbp-app .
+    ```
+    
+### sbbp-messaging
+
+1. 进入sbbp-messaging根目录, 使用gradle打包
+    ```
+    gradle build -x test
+    ```
+    此时会生成 build/libs/sbbp-messaging-0.0.1-SNAPSHOT.jar
+    
+2. 构建docker镜像, Dockerfile如下
+    ```
+    FROM openjdk:8-jre-alpine
+    ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
+        APP_SLEEP=0
+    # add directly the jar
+    ADD ./build/libs/*.jar /app.jar
+    VOLUME /tmp
+    CMD echo "The application will start in ${APP_SLEEP}s..." && \
+        sleep ${APP_SLEEP} && \
+        java -Djava.security.egd=file:/dev/./urandom -jar /app.jar
+    ```
+    执行如下命令
+    ```
+    docker build -t sbbp-messaging .
+    ```
+     
+### sbbp-admin  
+
+1. 进入sbbp-admin根目录, 使用gradle打包
+    ```
+    gradle build
+    ```
+    此时会生成 build/libs/sbbp-admin-0.0.1-SNAPSHOT.jar
+    
+2. 构建docker镜像, Dockerfile如下
+    ```
+    FROM openjdk:8-jre-alpine
+    ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
+        APP_SLEEP=0
+    # add directly the jar
+    ADD ./build/libs/*.jar /app.jar
+    VOLUME /tmp
+    CMD echo "The application will start in ${APP_SLEEP}s..." && \
+        sleep ${APP_SLEEP} && \
+        java -Djava.security.egd=file:/dev/./urandom -jar /app.jar
+    
+    EXPOSE 8090
+    ```
+    执行如下命令
+    ```
+    docker build -t sbbp-admin .
+    ```
+ 
+### sbbp-webapp
+1. 进入sbbp-webapp根目录, 确保删除如下文件夹
+    ```
+    rm -rf .nuxt
+    rm -rf node_modules
+    ```
+2. 构建docker镜像, Dockerfile如下
+    ```
+    FROM node:8.12-stretch
+    
+    ENV BASE_URL http://localhost:8080/
+    ENV AXIOS_BASE_URL http://localhost:8080/api
+    
+    RUN mkdir -p /app
+    
+    COPY . /app
+    
+    WORKDIR /app
+    
+    RUN npm config set registry https://registry.npm.taobao.org \
+        && npm install
+    
+    CMD cd /app \
+        && sed -i "s/process.env.AXIOS_BASE_URL/'$(echo $AXIOS_BASE_URL | sed 's/\//\\\//g')'/g" nuxt.config.js \
+        && (ls .nuxt || npm run build) \
+        && npm run start
+    
+    EXPOSE 3000
+    ```
+    执行如下命令
+    ```
+    docker build -t sbbp-webapp .
+    ```
+    
+## 部署
+
+1. 主机A, 部署mysql, mongo, 对应docker-compose.yml如下
+    ```
+    version: '2'
+    services:
+        sbbp-mysql:
+            image: mysql:5.7.20
+            environment:
+                - MYSQL_USER=root
+                - MYSQL_PASSWORD=password
+                - MYSQL_ROOT_PASSWORD=password
+                - MYSQL_DATABASE=sbbp
+            restart: always
+            command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp
+            ports:
+                - 3306:3306
+            volumes:
+                - $PWD/mysql-data:/var/lib/mysql
+        sbbp-mongo:
+            image: mongo:3.2.21
+            environment:
+                - MONGO_INITDB_ROOT_USERNAME=root
+                - MONGO_INITDB_ROOT_PASSWORD=password
+                - MONGO_INITDB_DATABASE=sbbp
+            restart: always
+            ports:
+                - 27017:27017
+            volumes:
+                - $PWD/mongo-data:/data/db
+
+    ```
+    运行如下命令
+    ```
+    docker-compose up -d
+    ```
+    
+2. 主机B, 部署rabbitmq, sbbp-messaging, 对应docker-compose.yml如下
+    ```
+    version: '2'
+    services:
+        sbbp-rabbitmq:
+            image: rabbitmq:3.7-stomp
+            environment:
+                - RABBITMQ_DEFAULT_USER=root
+                - RABBITMQ_DEFAULT_PASS=password
+            ports:
+                - 15672:15672
+                - 5672:5672
+                - 61613:61613
+            restart: always
+            volumes:
+                - $PWD/rabbitmq-data:/var/lib/rabbitmq
+        sbbp-messaging:
+            image: sbbp-messaging
+            restart: always
+            environment:
+                - SPRING_DATASOURCE_URL=jdbc:mysql://[主机A IP]:3306/sbbp
+                - SPRING_DATASOURCE_USERNAME=root
+                - SPRING_DATASOURCE_PASSWORD=password
+                - APPLICATION_STOMP_HOST=sbbp-rabbitmq
+                - APPLICATION_STOMP_PORT=61613
+                - APPLICATION_STOMP_USERNAME=root
+                - APPLICATION_STOMP_PASSWORD=password
+                - SPRING_APPLICATION_JSON={"application":{"socketAddress":{"host":"10.6.10.104","port":"7600","mqName":"huaxin"}}}
+    ```
+    运行如下命令
+    ```
+    docker-compose up -d
+    ```
+    
+3. 主机C, 部署sbbp-admin, sbbp-app, sbbp-webview, 对应docker-compose.yml如下
+    ```
+    version: '2'
+    services:
+        sbbp-app:
+            image: sbbp-app
+            environment:
+                # - _JAVA_OPTIONS=-Xmx512m -Xms256m
+                - SPRING_PROFILES_ACTIVE=prod,swagger
+                - SPRING_DATASOURCE_URL=jdbc:mysql://[主机A IP]:3306/sbbp?useUnicode=true&characterEncoding=utf8&useSSL=false
+                - SPRING_DATASOURCE_USERNAME=root
+                - SPRING_DATASOURCE_PASSWORD=password
+                - SPRING_DATA_MONGODB_URI=mongodb://[主机A IP]:27017/sbbp
+                - SPRING_DATA_MONGODB_USERNAME=root
+                - SPRING_DATA_MONGODB_PASSWORD=password
+                - APP_SLEEP=10 # gives time for the database to boot before the application
+                - APPLICATION_STOMP_HOST=[主机B IP]
+                - APPLICATION_STOMP_PORT=61613
+                - APPLICATION_STOMP_USERNAME=root
+                - APPLICATION_STOMP_PASSWORD=password
+                - SPRING_BOOT_ADMIN_CLIENT_URL=http://sbbp-admin:8090
+                - SPRING_BOOT_ADMIN_CLIENT_URL_INSTANCE_METADATA_USER_NAME=system
+                - SPRING_BOOT_ADMIN_CLIENT_URL_INSTANCE_METADATA_USER_PASSWORD=system
+                - SPRING_APPLICATION_JSON={"application":{"cors":{"allowed-origins":"*","allowed-methods":"*","allowed-headers":"*","exposed-headers":"Authorization,Link,X-Total-Count","allow-credentials":true,"max-age":1800}}}
+            restart: always
+            ports:
+                - 8080:8080
+        sbbp-webapp:
+            image: sbbp-webapp
+            environment:
+                - BASE_URL=http://[主机C IP]:8080/
+                - AXIOS_BASE_URL=http://[主机C IP]:8080/api
+            restart: always
+            ports:
+                - 3000:3000
+        sbbp-admin:
+            image: sbbp-admin
+            restart: always
+            environment:
+                - SPRING_SECURITY_USER_NAME=root
+                - SPRING_SECURITY_USER_PASSWORD=password
+            ports:
+                - 8090:8090
+    ```
+    运行如下命令
+    ```
+    docker-compose up -d
+    ```
