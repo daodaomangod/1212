@@ -1,0 +1,78 @@
+linux离线安装docker
+https://blog.csdn.net/u013058742/article/details/80075633
+***
+https://blog.csdn.net/h363659487/article/details/77159306?utm_source=blogxgwz6
+
+linux网络问题（disconnect）
+https://www.krizna.com/centos/setup-network-centos-7/
+
+Linux FTP 553 Could not create file.
+解决办法： 
+
+
+
+/abaptest/soft/ ? 为你要写/上传文件的目录
+
+
+
+
+
+
+1、 ?chmod -R 777 /abaptest/soft/ 
+
+
+
+
+2、 ?修改配置文件/etc/vsftpd.conf
+
+? ? ? ?
+ 添加/修改 ?local_root=/abaptest/soft/ ?
+
+配置阿里云镜像源
+http://www.kevinli.com.cn/archives/28
+https://blog.csdn.net/zhoubo5692/article/details/77989067
+
+安装docker
+http://www.kevinli.com.cn/archives/28
+
+安装docker-compose
+https://www.imooc.com/article/22933
+
+安装gradle
+https://www.cnblogs.com/barrywxx/p/7778363.html
+
+安装jdk
+https://blog.csdn.net/pang_ping/article/details/80570011
+
+
+
+安装docker镜像
+docker load <rabbitmq
+
+export http_proxy=10.5.13.40:808 &&
+export ftp_proxy=10.5.13.40:808 &&
+export https_proxy=10.5.13.40:808
+
+
+#rm -f /var/run/yum.pid
+
+npm config set proxy null
+
+docker run -ti node:8.12-stretch curl www.baidu.com
+
+docker run -ti -d node:8.12-stretch      
+ docker exec -it a144157b00d9419239ea8b342ffa2d5b6b4b7b7dc0f46cbdb9abdae7c40f1269 bash
+//构建镜像
+docker build -f Dockerfile -t sbbp-webapp .
+//保存镜像
+docker save sbbp-webapp:latest >sbbp-webapp
+
+1. 你在能连外网的linux上装docker
+2. 然后构建webapp的镜像
+3. 然后 docker save sbbp-webapp:latest > webapp
+4. 拷贝到服务器后, docker load < webapp
+
+
+CentOS7使用阿里云仓库安装docker-ce
+https://blog.csdn.net/u013531940/article/details/80037343
+ 
