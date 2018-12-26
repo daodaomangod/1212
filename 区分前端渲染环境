@@ -1,0 +1,6 @@
+canSee(name) {
+      if (process.browser) {
+        return securityUtil.canSee(name, JSON.parse(localStorage.getItem('authority')));
+      }
+      return true;
+    },
